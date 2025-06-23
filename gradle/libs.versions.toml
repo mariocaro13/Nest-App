@@ -1,0 +1,88 @@
+########################################################################
+# Libs.versions.toml
+# This file centralizes and manages versions, libraries, and plugins.
+# Update versions here to maintain consistency across the project.
+########################################################################
+
+# ----------------------------------------------------------------------
+# [versions] - Centralized version definitions for plugins and libraries
+# ----------------------------------------------------------------------
+[versions]
+# Plugin Versions
+agp = "8.10.1"                      # Android Gradle Plugin
+kotlin = "2.0.21"                   # Kotlin version
+composeBom = "2025.06.01"           # Compose BOM version
+kotlin-serialization = "1.9.0"      # Kotlin Serialization plugin
+googleServices = "4.4.2"            # Google Services plugin
+
+# Library Versions (non-plugin)
+coilCompose = "2.5.0"               # Coil image loading
+firebaseBom = "33.15.0"             # Firebase BOM to align Firebase versions
+coreKtx = "1.16.0"                  # AndroidX Core KTX
+junit = "4.13.2"                    # JUnit for testing
+junitVersion = "1.2.1"              # AndroidX JUnit extension
+espressoCore = "3.6.1"              # Espresso Core for UI tests
+kotlinxCoroutinesPlayServices = "1.7.3"
+kotlinxSerializationJson = "1.7.3"
+ktorClientCio = "2.3.11"
+ktorClientContentNegotiation = "2.3.11"
+ktorClientCore = "2.3.11"
+ktorSerializationKotlinxJson = "2.3.11"
+lifecycleRuntimeKtx = "2.9.1"         # AndroidX Lifecycle runtime
+activityCompose = "1.10.1"            # Compose Activity
+credentials = "1.5.0"                 # AndroidX Credentials
+credentialsPlayServicesAuth = "1.5.0"   # Credenciales para Play Services Auth
+navigationCompose = "2.9.0"           # Navigation-Compose
+playServicesAuth = "21.3.0"           # Google Play Services Auth
+firebaseDatabaseKtx = "21.0.0"        # Firebase Database KTX
+
+# ----------------------------------------------------------------------
+# [libraries] - Aliases for dependencies with group, artifact & version reference
+# ----------------------------------------------------------------------
+[libraries]
+# AndroidX
+androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
+androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
+androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
+androidx-ui = { group = "androidx.compose.ui", name = "ui" }
+androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
+androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
+androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
+androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
+androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+androidx-navigation-compose = { group = "androidx.navigation", name = "navigation-compose", version.ref = "navigationCompose" }
+
+# Third-Party Libraries
+coil-compose = { module = "io.coil-kt:coil-compose", version.ref = "coilCompose" }
+firebase-analytics = { module = "com.google.firebase:firebase-analytics" }
+firebase-auth-ktx = { module = "com.google.firebase:firebase-auth-ktx" }
+firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebaseBom" }
+firebase-firestore-ktx = { module = "com.google.firebase:firebase-firestore-ktx" }
+firebase-storage-ktx = { module = "com.google.firebase:firebase-storage-ktx" }
+google-firebase-auth = { module = "com.google.firebase:firebase-auth" }
+junit = { group = "junit", name = "junit", version.ref = "junit" }
+androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
+androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+kotlinx-coroutines-play-services = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-play-services", version.ref = "kotlinxCoroutinesPlayServices" }
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
+ktor-client-cio = { module = "io.ktor:ktor-client-cio", version.ref = "ktorClientCio" }
+ktor-client-content-negotiation = { module = "io.ktor:ktor-client-content-negotiation", version.ref = "ktorClientContentNegotiation" }
+ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktorClientCore" }
+ktor-serialization-kotlinx-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktorSerializationKotlinxJson" }
+play-services-auth = { module = "com.google.android.gms:play-services-auth", version.ref = "playServicesAuth" }
+firebase-database-ktx = { group = "com.google.firebase", name = "firebase-database-ktx", version.ref = "firebaseDatabaseKtx" }
+
+# ----------------------------------------------------------------------
+# [plugins] - Plugin definitions for build scripts
+# with the Kotlin Gradle Plugin.
+# ----------------------------------------------------------------------
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
+kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin-serialization" }
+google-services = { id = "com.google.gms.google-services", version.ref = "googleServices" }
