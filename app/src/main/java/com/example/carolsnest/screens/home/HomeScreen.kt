@@ -1,5 +1,6 @@
 package com.example.carolsnest.screens.home
 
+import android.content.ContentValues.TAG
 import android.util.Log
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.PickVisualMediaRequest
@@ -14,15 +15,19 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.carolsnest.content.HomeScreenContent
+import com.example.carolsnest.content.components.BottomTab
 import com.example.carolsnest.model.HomeViewModel
+import com.example.carolsnest.model.SessionViewModel
 import com.example.carolsnest.navigation.AppDestinations
 
 @Composable
 fun HomeScreen(
-    navController: NavController, homeViewModel: HomeViewModel = viewModel()
+    navController: NavController, sessionVm: SessionViewModel, homeViewModel: HomeViewModel = viewModel()
 ) {
     // Observe the global state from the HomeViewModel.
-    val homeState by homeViewModel.uiState.collectAsState()
+    val homeState by homeViewModel.homeScreenStateStateFlow.collectAsState()
+    val currentTab by homeViewModel.currentTab.collectAsState()
+    val profileImageUrl by sessionVm.profileImageUrl.collectAsState()
     val context = LocalContext.current
     val snackbarHostState = remember { SnackbarHostState() }
 
@@ -42,12 +47,21 @@ fun HomeScreen(
         }
     }
 
+    Log.d(TAG, "HomeScreen: $profileImageUrl")
     // Pass state and callbacks to the UI content.
     HomeScreenContent(
         homeState = homeState,
         snackbarHostState = snackbarHostState,
-        onProfileNav = {
-            navController.navigate("profile")
+        currentTab = currentTab,
+        profileImageUrl = profileImageUrl,
+        onTabSelected = { tab ->
+            homeViewModel.onTabSelected(tab)
+            when (tab) {
+                BottomTab.Home -> navController.navigate(AppDestinations.HOME_SCREEN) {
+                    popUpTo(AppDestinations.HOME_SCREEN) { inclusive = true }
+                }
+                BottomTab.Profile -> navController.navigate(AppDestinations.PROFILE_SCREEN)
+            }
         },
         onBirdItemClick = { bird ->
             Log.d("HomeScreen", "Clicked on bird: ${bird.name} (ID: ${bird.id})")
@@ -67,5 +81,5 @@ fun HomeScreen(
             )
         },
         onImageRemoved = { homeViewModel.onImageRemoved(it) },
-        onSaveClick = { homeViewModel.saveBird(context) })
+        onSaveClick = { homeViewModel.saveBird() })
 }

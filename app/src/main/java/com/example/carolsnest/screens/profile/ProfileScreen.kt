@@ -8,17 +8,9 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.material3.TopAppBarDefaults.topAppBarColors
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -28,15 +20,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.carolsnest.content.ProfileContent
+import com.example.carolsnest.content.components.AppBottomBar
+import com.example.carolsnest.content.components.BottomTab
 import com.example.carolsnest.content.dialogs.ChangePasswordDialog
 import com.example.carolsnest.content.dialogs.EditDisplayNameDialog
 import com.example.carolsnest.factory.ProfileViewModelFactory
 import com.example.carolsnest.model.ProfileViewModel
+import com.example.carolsnest.model.SessionViewModel
+import com.example.carolsnest.navigation.AppDestinations
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
@@ -49,9 +44,8 @@ import kotlinx.coroutines.launch
  *
  * @param navController Navigation controller.
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun ProfileScreen(navController: NavController) {
+fun ProfileScreen(navController: NavController, sessionVm: SessionViewModel) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
 
@@ -66,6 +60,19 @@ fun ProfileScreen(navController: NavController) {
     val userProfile by viewModel.userProfile.collectAsState()
     val currentUser = FirebaseAuth.getInstance().currentUser
 
+    val profileImageUrl by sessionVm.profileImageUrl.collectAsState()
+    val currentTab = BottomTab.Profile
+    val onTabSelected: (BottomTab) -> Unit = { tab ->
+        when (tab) {
+            BottomTab.Home -> navController.navigate(AppDestinations.HOME_SCREEN) {
+                popUpTo(AppDestinations.HOME_SCREEN) { inclusive = true }
+            }
+
+            BottomTab.Profile -> {}
+        }
+    }
+
+
     // Local state for showing dialogs.
     var showEditDisplayNameDialog by remember { mutableStateOf(false) }
     var showChangePasswordDialog by remember { mutableStateOf(false) }
@@ -77,10 +84,11 @@ fun ProfileScreen(navController: NavController) {
         uri?.let { selectedUri ->
             scope.launch {
                 try {
-                    viewModel.updateProfilePhoto(selectedUri, context)
+                    val newUrl = viewModel.updateProfilePhoto(selectedUri, context)
                     Toast.makeText(
                         context, "Profile photo updated successfully", Toast.LENGTH_SHORT
                     ).show()
+                    sessionVm.updateProfileUrl(newUrl)
                 } catch (e: Exception) {
                     Log.e("ProfileScreen", "Error updating profile photo: ${e.message}", e)
                     Toast.makeText(context, "Error updating photo: ${e.message}", Toast.LENGTH_LONG)
@@ -90,25 +98,7 @@ fun ProfileScreen(navController: NavController) {
         }
     }
 
-    // The UI is organized using a Scaffold.
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = { Text("My Profile") }, navigationIcon = {
-                IconButton(onClick = { navController.popBackStack() }) {
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                        contentDescription = "Back",
-                        tint = Color.White
-                    )
-                }
-            }, colors = topAppBarColors(
-                containerColor = MaterialTheme.colorScheme.primary,
-                titleContentColor = Color.White,
-                navigationIconContentColor = Color.White
-            )
-            )
-        }) { innerPadding ->
+    Scaffold { innerPadding ->
         Box(
             modifier = Modifier
                 .fillMaxSize()
@@ -158,6 +148,13 @@ fun ProfileScreen(navController: NavController) {
                     )
                 }
             }
+
+            AppBottomBar(
+                currentTab = currentTab,
+                profileImageUrl = profileImageUrl,
+                onTabSelected = onTabSelected,
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
         }
     }
 

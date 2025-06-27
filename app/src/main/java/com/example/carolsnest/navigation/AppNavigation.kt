@@ -7,11 +7,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.carolsnest.model.SessionViewModel
 import com.example.carolsnest.screens.signup.SignUpScreen
 import com.example.carolsnest.screens.bird.BirdDetailScreen
 import com.example.carolsnest.screens.profile.ProfileScreen
@@ -24,6 +26,7 @@ import com.google.firebase.auth.auth
 @Composable
 fun AppNavigation() {
     val navController = rememberNavController()
+    val sessionVm: SessionViewModel = viewModel()
     val auth: FirebaseAuth = Firebase.auth
 
     var isAuthChecked by remember { mutableStateOf(false) }
@@ -38,18 +41,26 @@ fun AppNavigation() {
     }
     if (isAuthChecked) {
         NavHost(navController = navController, startDestination = startDestination) {
-            composable(AppDestinations.HOME_SCREEN) { HomeScreen(navController = navController) }
+            composable(AppDestinations.HOME_SCREEN) {
+                HomeScreen(
+                    navController = navController, sessionVm = sessionVm
+                )
+            }
             composable(AppDestinations.LOGIN_SCREEN) { LoginScreen(navController = navController) }
             composable(AppDestinations.SIGNUP_SCREEN) { SignUpScreen(navController = navController) }
             composable(AppDestinations.LOGIN_SCREEN) { LoginScreen(navController = navController) }
-            composable(AppDestinations.PROFILE_SCREEN) { ProfileScreen(navController = navController) }
+            composable(AppDestinations.PROFILE_SCREEN) {
+                ProfileScreen(
+                    navController = navController, sessionVm = sessionVm
+                )
+            }
 
             composable(
                 route = AppDestinations.BIRD_DETAIL_ROUTE,
-                arguments = listOf(navArgument(AppDestinations.BIRD_ID_ARG){
+                arguments = listOf(navArgument(AppDestinations.BIRD_ID_ARG) {
                     type = NavType.StringType
                 })
-            ){
+            ) {
                 BirdDetailScreen(navController = navController)
             }
         }

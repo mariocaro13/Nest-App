@@ -48,7 +48,7 @@ class ProfileViewModel(
      * Loads the user's profile from Firestore.
      * If the profile document does not exist, it creates a new one.
      */
-    fun loadUserProfile() {
+    private fun loadUserProfile() {
         val currentUser = auth.currentUser ?: return
         viewModelScope.launch {
             _isLoading.value = true

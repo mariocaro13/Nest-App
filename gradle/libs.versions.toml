@@ -9,7 +9,7 @@
 # ----------------------------------------------------------------------
 [versions]
 # Plugin Versions
-agp = "8.10.1"                      # Android Gradle Plugin
+agp = "8.11.0"                      # Android Gradle Plugin
 kotlin = "2.0.21"                   # Kotlin version
 composeBom = "2025.06.01"           # Compose BOM version
 kotlin-serialization = "1.9.0"      # Kotlin Serialization plugin

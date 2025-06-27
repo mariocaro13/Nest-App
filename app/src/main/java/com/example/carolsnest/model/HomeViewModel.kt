@@ -5,6 +5,7 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.carolsnest.content.components.BottomTab
 import com.example.carolsnest.data.BirdData
 import com.example.carolsnest.imgbb.uploadImageToImgBB
 import com.example.carolsnest.state.AddBirdDialogState
@@ -28,19 +29,37 @@ class HomeViewModel : ViewModel() {
     private val auth = FirebaseAuth.getInstance()
 
     // Aggregated UI state for the home screen.
-    private val _uiState = MutableStateFlow(HomeScreenState())
-    val uiState: StateFlow<HomeScreenState> = _uiState.asStateFlow()
+    private val homeScreenStateMutableStateFlow = MutableStateFlow(HomeScreenState())
+    val homeScreenStateStateFlow: StateFlow<HomeScreenState> =
+        homeScreenStateMutableStateFlow.asStateFlow()
 
     // Internal set to store uploaded image URLs (from ImgBB)
     private val _uploadedImgBbUrlsSet = mutableSetOf<String>()
 
+    private val _currentTab: MutableStateFlow<BottomTab> = MutableStateFlow(BottomTab.Home)
+    val currentTab: StateFlow<BottomTab> = _currentTab.asStateFlow()
+
+    private val _profileImageUrl = MutableStateFlow<String?>(null)
+    val profileImageUrl: StateFlow<String?> = _profileImageUrl.asStateFlow()
+
     init {
         loadUserBirds()
+        loadUserProfileUrl()
     }
+
+    fun onTabSelected(tab: BottomTab) {
+        _currentTab.value = tab
+    }
+
+    private fun loadUserProfileUrl() {
+        auth.currentUser?.photoUrl?.toString()?.let { _profileImageUrl.value = it }
+    }
+
+    fun refreshProfileImageUrl() = loadUserProfileUrl()
 
     // Opens the "Add Bird" dialog by resetting related state.
     fun onOpenAddBirdDialog() {
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(
                 showAddBirdDialog = true,
                 addBirdDialogState = AddBirdDialogState(),
@@ -52,13 +71,13 @@ class HomeViewModel : ViewModel() {
 
     // Closes the "Add Bird" dialog.
     fun onDismissAddBirdDialog() {
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(showAddBirdDialog = false)
         }
     }
 
     fun onBirdNameChange(name: String) {
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(
                 addBirdDialogState = currentState.addBirdDialogState.copy(
                     birdName = name, errorMessage = null
@@ -68,7 +87,7 @@ class HomeViewModel : ViewModel() {
     }
 
     fun onBirdDescriptionChange(description: String) {
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(
                 addBirdDialogState = currentState.addBirdDialogState.copy(
                     birdDescription = description, errorMessage = null
@@ -80,7 +99,7 @@ class HomeViewModel : ViewModel() {
     // Called when an image is selected; uploads the image to ImgBB and updates the state accordingly.
     fun onImageSelected(uri: Uri, context: Context) {
         // Ensure the image is not already selected and that we don't exceed a maximum of 5 images.
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             if (!currentState.selectedImageUrisForPreview.contains(uri) && currentState.selectedImageUrisForPreview.size < 5) {
                 currentState.copy(
                     selectedImageUrisForPreview = currentState.selectedImageUrisForPreview + uri,
@@ -92,18 +111,18 @@ class HomeViewModel : ViewModel() {
         }
         viewModelScope.launch {
             try {
-                // Upload the image to ImgBB (this function must be implemented elsewhere)
+                // Upload the image to ImgBB
                 val imageUrl = uploadImageToImgBB(context, uri, maxSizeKb = 1024)
                 if (imageUrl != null) {
                     _uploadedImgBbUrlsSet.add(imageUrl)
                 } else {
                     Log.e("HomeViewModel", "ImgBB upload returned null for $uri")
-                    _uiState.update { currentState ->
+                    homeScreenStateMutableStateFlow.update { currentState ->
                         currentState.copy(
                             addBirdDialogState = currentState.addBirdDialogState.copy(errorMessage = "Error al subir la imagen a ImgBB.")
                         )
                     }
-                    _uiState.update { currentState ->
+                    homeScreenStateMutableStateFlow.update { currentState ->
                         currentState.copy(
                             selectedImageUrisForPreview = currentState.selectedImageUrisForPreview - uri
                         )
@@ -111,18 +130,18 @@ class HomeViewModel : ViewModel() {
                 }
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Exception while uploading image to ImgBB: $uri", e)
-                _uiState.update { currentState ->
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(errorMessage = "Error al subir la imagen a ImgBB.")
                     )
                 }
-                _uiState.update { currentState ->
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         selectedImageUrisForPreview = currentState.selectedImageUrisForPreview - uri
                     )
                 }
             } finally {
-                _uiState.update { currentState ->
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(isUploadingImage = false)
                     )
@@ -132,7 +151,7 @@ class HomeViewModel : ViewModel() {
     }
 
     fun onImageRemoved(uri: Uri) {
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(selectedImageUrisForPreview = currentState.selectedImageUrisForPreview - uri)
         }
     }
@@ -147,10 +166,10 @@ class HomeViewModel : ViewModel() {
     }
 
     // Saves a new bird in Firestore using the information from the dialog.
-    fun saveBird(context: Context) {
+    fun saveBird() {
         val currentUserId = auth.currentUser?.uid
         if (currentUserId == null) {
-            _uiState.update { currentState ->
+            homeScreenStateMutableStateFlow.update { currentState ->
                 currentState.copy(
                     addBirdDialogState = currentState.addBirdDialogState.copy(
                         errorMessage = "Error: El usuario debe estar autenticado.",
@@ -160,10 +179,10 @@ class HomeViewModel : ViewModel() {
             }
             return
         }
-        val currentDialogState = _uiState.value.addBirdDialogState
+        val currentDialogState = homeScreenStateMutableStateFlow.value.addBirdDialogState
         val birdNameTrimmed = currentDialogState.birdName.trim()
         if (birdNameTrimmed.isBlank()) {
-            _uiState.update { currentState ->
+            homeScreenStateMutableStateFlow.update { currentState ->
                 currentState.copy(
                     addBirdDialogState = currentState.addBirdDialogState.copy(
                         errorMessage = "Error: El nombre del pollito no puede estar vacío.",
@@ -173,7 +192,7 @@ class HomeViewModel : ViewModel() {
             }
             return
         }
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(
                 addBirdDialogState = currentState.addBirdDialogState.copy(
                     isUploading = true, errorMessage = null
@@ -182,7 +201,7 @@ class HomeViewModel : ViewModel() {
         }
         viewModelScope.launch {
             if (checkIfBirdNameExists(currentUserId, birdNameTrimmed)) {
-                _uiState.update { currentState ->
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(
                             isUploading = false,
@@ -192,8 +211,8 @@ class HomeViewModel : ViewModel() {
                 }
                 return@launch
             }
-            if (_uiState.value.addBirdDialogState.isUploadingImage) {
-                _uiState.update { currentState ->
+            if (homeScreenStateMutableStateFlow.value.addBirdDialogState.isUploadingImage) {
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(
                             isUploading = false,
@@ -204,8 +223,8 @@ class HomeViewModel : ViewModel() {
                 return@launch
             }
             val finalImageUrlsToSave = _uploadedImgBbUrlsSet.toList()
-            if (_uiState.value.selectedImageUrisForPreview.isNotEmpty() && finalImageUrlsToSave.isEmpty()) {
-                _uiState.update { currentState ->
+            if (homeScreenStateMutableStateFlow.value.selectedImageUrisForPreview.isNotEmpty() && finalImageUrlsToSave.isEmpty()) {
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(
                             isUploading = false,
@@ -220,7 +239,7 @@ class HomeViewModel : ViewModel() {
             val birdDataToSave = BirdData(
                 id = newBirdId,
                 name = birdNameTrimmed,
-                description = _uiState.value.addBirdDialogState.birdDescription.trim()
+                description = homeScreenStateMutableStateFlow.value.addBirdDialogState.birdDescription.trim()
                     .takeIf { it.isNotBlank() },
                 imageUrls = finalImageUrlsToSave,
                 timestamp = System.currentTimeMillis(),
@@ -235,7 +254,7 @@ class HomeViewModel : ViewModel() {
                 onDismissAddBirdDialog()
             } catch (e: Exception) {
                 Log.e("HomeViewModel", "Error saving bird", e)
-                _uiState.update { currentState ->
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(
                             isUploading = false, errorMessage = "Error: ${e.message}"
@@ -243,7 +262,7 @@ class HomeViewModel : ViewModel() {
                     )
                 }
             } finally {
-                _uiState.update { currentState ->
+                homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(isUploading = false)
                     )
@@ -253,21 +272,21 @@ class HomeViewModel : ViewModel() {
     }
 
     // Loads the list of birds for the current user from Firestore.
-    fun loadUserBirds() {
+    private fun loadUserBirds() {
         val currentUser = auth.currentUser
-        _uiState.update { currentState ->
+        homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(isLoading = true)
         }
         if (currentUser != null) {
             db.collection("birds").whereEqualTo("userId", currentUser.uid)
                 .orderBy("timestamp", Query.Direction.DESCENDING)
                 .addSnapshotListener { snapshots, e ->
-                    _uiState.update { currentState ->
+                    homeScreenStateMutableStateFlow.update { currentState ->
                         currentState.copy(isLoading = false)
                     }
                     if (e != null) {
                         Log.w("HomeViewModel", "Listen failed.", e)
-                        _uiState.update { currentState ->
+                        homeScreenStateMutableStateFlow.update { currentState ->
                             currentState.copy(birds = emptyList())
                         }
                         return@addSnapshotListener
@@ -276,20 +295,19 @@ class HomeViewModel : ViewModel() {
                         val birdList = snapshots.documents.mapNotNull { document ->
                             document.toObject(BirdData::class.java)?.copy(id = document.id)
                         }
-                        _uiState.update { currentState ->
+                        homeScreenStateMutableStateFlow.update { currentState ->
                             currentState.copy(birds = birdList)
                         }
                     } else {
-                        _uiState.update { currentState ->
+                        homeScreenStateMutableStateFlow.update { currentState ->
                             currentState.copy(birds = emptyList())
                         }
                     }
                 }
         } else {
-            _uiState.update { currentState ->
+            homeScreenStateMutableStateFlow.update { currentState ->
                 currentState.copy(birds = emptyList(), isLoading = false)
             }
         }
     }
-
 }

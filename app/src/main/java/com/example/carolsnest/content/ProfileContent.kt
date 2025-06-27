@@ -24,6 +24,7 @@ import androidx.compose.ui.res.painterResource
 import  androidx.activity.result.ActivityResultLauncher
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
+import com.example.carolsnest.content.components.AppBottomBar
 
 /**
  * ProfileContent is a UI-only composable that displays the user profile details.
