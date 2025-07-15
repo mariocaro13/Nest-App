@@ -1,4 +1,5 @@
 <resources>
-    <string name="app_name">Carol\'s Nest</string>
-    <string name="title_activity_login_screen.kt">LoginScreen.kt</string>
+    <string name="app_name" translatable="false">Carol\'s Nest</string>
+    <string name="title_activity_login_screen.kt" translatable="false">LoginScreen.kt</string>
+    <string name="bird_detail_topbar_title">Bird details</string>
 </resources>

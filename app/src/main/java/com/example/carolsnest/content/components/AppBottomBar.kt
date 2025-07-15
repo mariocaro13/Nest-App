@@ -3,6 +3,7 @@ package com.example.carolsnest.content.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
@@ -10,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
@@ -24,18 +26,19 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 
 sealed class BottomTab {
-    data object Home : BottomTab()
+    data object Home    : BottomTab()
     data object Profile : BottomTab()
 }
 
 @Composable
 fun AppBottomBar(
-    currentTab: BottomTab,
+    currentTab: BottomTab?,
     profileImageUrl: String?,
     onTabSelected: (BottomTab) -> Unit,
     modifier: Modifier = Modifier
@@ -44,15 +47,20 @@ fun AppBottomBar(
         modifier = modifier
             .fillMaxWidth()
             .height(56.dp)
-            .clip(RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp))
-            .background(MaterialTheme.colorScheme.secondary),
+            .graphicsLayer {
+                shape = RoundedCornerShape(topStart = 26.dp, topEnd = 26.dp)
+                clip = true
+            },
         containerColor = MaterialTheme.colorScheme.secondary,
+        contentPadding = PaddingValues(0.dp)
     ) {
         Row(
             Modifier.fillMaxSize(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
+
+            // HOME BUTTON
             IconButton(
                 onClick = { onTabSelected(BottomTab.Home) }, modifier = Modifier.weight(1f)
             ) {
@@ -74,9 +82,11 @@ fun AppBottomBar(
             Spacer(
                 modifier = Modifier
                     .fillMaxHeight()
-                    .size(1.dp)
+                    .width(1.dp)
                     .background(MaterialTheme.colorScheme.background)
             )
+
+            // PROFILE BUTTON
             IconButton(
                 onClick = { onTabSelected(BottomTab.Profile) }, modifier = Modifier.weight(1f)
             ) {

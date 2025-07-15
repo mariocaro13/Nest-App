@@ -36,10 +36,9 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.carolsnest.state.AddBirdDialogState
 
 @Composable
-fun AddBirdDialog(
+fun EditBirdDialog(
     dialogState: AddBirdDialogState,
     selectedImageUris: List<Uri>,
-    onBirdNameChange: (String) -> Unit,
     onBirdDescriptionChange: (String) -> Unit,
     onSelectImageClick: () -> Unit,
     onImageRemoved: (Uri) -> Unit,
@@ -48,26 +47,11 @@ fun AddBirdDialog(
 ) {
     AlertDialog(
         onDismissRequest = { if (!dialogState.isUploading) onDismissRequest() },
-        title = { Text("Añadir Pollo") },
+        title = { Text("Editar Pollo") },
         text = {
             Column(
                 modifier = Modifier.padding(vertical = 8.dp),
             ) {
-                OutlinedTextField(
-                    value = dialogState.birdName,
-                    onValueChange = onBirdNameChange,
-                    label = { Text("Nombre *") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = !dialogState.isUploading,
-                    isError = dialogState.errorMessage?.contains(
-                        "nombre",
-                        ignoreCase = true
-                    ) == true ||
-                            (dialogState.birdName.isBlank() && dialogState.isUploading)
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-
                 OutlinedTextField(
                     value = dialogState.birdDescription,
                     onValueChange = onBirdDescriptionChange,
@@ -82,7 +66,7 @@ fun AddBirdDialog(
                     modifier = Modifier.fillMaxWidth(),
                     enabled = !dialogState.isUploading
                 ) {
-                    Text("Añadir Foticos (Opcional)")
+                    Text("Añadir mas Foticos")
                 }
                 Spacer(modifier = Modifier.height(8.dp))
 
@@ -137,7 +121,7 @@ fun AddBirdDialog(
                     Spacer(modifier = Modifier.height(16.dp))
                     LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
                     Text(
-                        "Guardando pollo...",
+                        "Actualizando pollo...",
                         style = MaterialTheme.typography.bodySmall,
                         modifier = Modifier.align(
                             Alignment.CenterHorizontally

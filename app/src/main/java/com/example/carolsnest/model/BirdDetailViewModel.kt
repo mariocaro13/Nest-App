@@ -3,15 +3,15 @@ package com.example.carolsnest.model
 import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.example.carolsnest.data.BirdData
 import com.example.carolsnest.navigation.AppDestinations
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.tasks.await
-import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 
 class BirdDetailViewModel(
     savedStateHandle: SavedStateHandle,
@@ -46,6 +46,10 @@ class BirdDetailViewModel(
                 "Firestore - No se llama a fetchBirdDetailsOnce. birdId: '$birdId', birdDocRef es null: ${birdDocRef == null}"
             )
         }
+    }
+
+    // Opens the "Add Bird" dialog by resetting related state.
+    fun onOpenEditBirdDialog() {
     }
 
     private suspend fun fetchBirdDetailsOnce() {
@@ -85,7 +89,11 @@ class BirdDetailViewModel(
             }
 
         } catch (e: Exception) {
-            Log.e("fetchBirdDetailsOnce: ", "Firestore - fetchBirdDetailsOnce: Error al obtener detalles del pájaro", e)
+            Log.e(
+                "fetchBirdDetailsOnce: ",
+                "Firestore - fetchBirdDetailsOnce: Error al obtener detalles del pájaro",
+                e
+            )
         } finally {
             Log.d("fetchBirdDetailsOnce: ", "Firestore - fetchBirdDetailsOnce: Finalizando")
             _isLoading.value = false

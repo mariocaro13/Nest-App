@@ -7,9 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
@@ -24,14 +22,11 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import com.example.carolsnest.content.ProfileContent
-import com.example.carolsnest.content.components.AppBottomBar
-import com.example.carolsnest.content.components.BottomTab
 import com.example.carolsnest.content.dialogs.ChangePasswordDialog
 import com.example.carolsnest.content.dialogs.EditDisplayNameDialog
 import com.example.carolsnest.factory.ProfileViewModelFactory
 import com.example.carolsnest.model.ProfileViewModel
 import com.example.carolsnest.model.SessionViewModel
-import com.example.carolsnest.navigation.AppDestinations
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
 import kotlinx.coroutines.launch
@@ -60,18 +55,6 @@ fun ProfileScreen(navController: NavController, sessionVm: SessionViewModel) {
     val userProfile by viewModel.userProfile.collectAsState()
     val currentUser = FirebaseAuth.getInstance().currentUser
 
-    val profileImageUrl by sessionVm.profileImageUrl.collectAsState()
-    val currentTab = BottomTab.Profile
-    val onTabSelected: (BottomTab) -> Unit = { tab ->
-        when (tab) {
-            BottomTab.Home -> navController.navigate(AppDestinations.HOME_SCREEN) {
-                popUpTo(AppDestinations.HOME_SCREEN) { inclusive = true }
-            }
-
-            BottomTab.Profile -> {}
-        }
-    }
-
 
     // Local state for showing dialogs.
     var showEditDisplayNameDialog by remember { mutableStateOf(false) }
@@ -98,62 +81,41 @@ fun ProfileScreen(navController: NavController, sessionVm: SessionViewModel) {
         }
     }
 
-    Scaffold { innerPadding ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-        ) {
-            when {
-                isLoading && userProfile == null -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        CircularProgressIndicator()
-                    }
-                }
-
-                currentUser == null || userProfile == null -> {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxSize()
-                            .padding(innerPadding),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text("Could not load user profile.")
-                    }
-                }
-
-                else -> {
-                    ProfileContent(
-                        userProfile = userProfile!!,
-                        imagePickerLauncher = imagePickerLauncher,
-                        onEditDisplayName = { showEditDisplayNameDialog = true },
-                        onChangePassword = { showChangePasswordDialog = true },
-                        onSignOut = {
-                            scope.launch {
-                                viewModel.signOut()
-                                navController.navigate("login") {
-                                    popUpTo(navController.graph.startDestinationId) {
-                                        inclusive = true
-                                    }
-                                    launchSingleTop = true
-                                }
-                            }
-                        },
-                        isLoading = isLoading
-                    )
-                }
+    when {
+        isLoading && userProfile == null -> {
+            Box(
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+            ) {
+                CircularProgressIndicator()
             }
+        }
 
-            AppBottomBar(
-                currentTab = currentTab,
-                profileImageUrl = profileImageUrl,
-                onTabSelected = onTabSelected,
-                modifier = Modifier.align(Alignment.BottomCenter)
+        currentUser == null || userProfile == null -> {
+            Box(
+                modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center
+            ) {
+                Text("Could not load user profile.")
+            }
+        }
+
+        else -> {
+            ProfileContent(
+                userProfile = userProfile!!,
+                imagePickerLauncher = imagePickerLauncher,
+                onEditDisplayName = { showEditDisplayNameDialog = true },
+                onChangePassword = { showChangePasswordDialog = true },
+                onSignOut = {
+                    scope.launch {
+                        viewModel.signOut()
+                        navController.navigate("login") {
+                            popUpTo(navController.graph.startDestinationId) {
+                                inclusive = true
+                            }
+                            launchSingleTop = true
+                        }
+                    }
+                },
+                isLoading = isLoading
             )
         }
     }

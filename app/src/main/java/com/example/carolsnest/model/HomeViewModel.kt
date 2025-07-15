@@ -5,7 +5,6 @@ import android.net.Uri
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.carolsnest.content.components.BottomTab
 import com.example.carolsnest.data.BirdData
 import com.example.carolsnest.imgbb.uploadImageToImgBB
 import com.example.carolsnest.state.AddBirdDialogState
@@ -36,26 +35,17 @@ class HomeViewModel : ViewModel() {
     // Internal set to store uploaded image URLs (from ImgBB)
     private val _uploadedImgBbUrlsSet = mutableSetOf<String>()
 
-    private val _currentTab: MutableStateFlow<BottomTab> = MutableStateFlow(BottomTab.Home)
-    val currentTab: StateFlow<BottomTab> = _currentTab.asStateFlow()
-
     private val _profileImageUrl = MutableStateFlow<String?>(null)
-    val profileImageUrl: StateFlow<String?> = _profileImageUrl.asStateFlow()
 
     init {
         loadUserBirds()
         loadUserProfileUrl()
     }
 
-    fun onTabSelected(tab: BottomTab) {
-        _currentTab.value = tab
-    }
 
     private fun loadUserProfileUrl() {
         auth.currentUser?.photoUrl?.toString()?.let { _profileImageUrl.value = it }
     }
-
-    fun refreshProfileImageUrl() = loadUserProfileUrl()
 
     // Opens the "Add Bird" dialog by resetting related state.
     fun onOpenAddBirdDialog() {
