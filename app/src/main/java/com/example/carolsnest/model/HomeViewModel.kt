@@ -32,8 +32,8 @@ class HomeViewModel : ViewModel() {
     val homeScreenStateStateFlow: StateFlow<HomeScreenState> =
         homeScreenStateMutableStateFlow.asStateFlow()
 
-    // Internal set to store uploaded image URLs (from ImgBB)
-    private val _uploadedImgBbUrlsSet = mutableSetOf<String>()
+    // Mapa para asociar cada imagen seleccionada (Uri) a su URL subida en ImgBB o null si falló.
+    private val _uploadedImgBbUrlMap = mutableMapOf<Uri, String?>()
 
     private val _profileImageUrl = MutableStateFlow<String?>(null)
 
@@ -41,7 +41,6 @@ class HomeViewModel : ViewModel() {
         loadUserBirds()
         loadUserProfileUrl()
     }
-
 
     private fun loadUserProfileUrl() {
         auth.currentUser?.photoUrl?.toString()?.let { _profileImageUrl.value = it }
@@ -56,7 +55,8 @@ class HomeViewModel : ViewModel() {
                 selectedImageUrisForPreview = emptyList()
             )
         }
-        _uploadedImgBbUrlsSet.clear()
+        // Limpiar el mapa de URLs de imágenes subidas.
+        _uploadedImgBbUrlMap.clear()
     }
 
     // Closes the "Add Bird" dialog.
@@ -91,6 +91,7 @@ class HomeViewModel : ViewModel() {
         // Ensure the image is not already selected and that we don't exceed a maximum of 5 images.
         homeScreenStateMutableStateFlow.update { currentState ->
             if (!currentState.selectedImageUrisForPreview.contains(uri) && currentState.selectedImageUrisForPreview.size < 5) {
+                // Iniciar carga y resetear mensaje de error.
                 currentState.copy(
                     selectedImageUrisForPreview = currentState.selectedImageUrisForPreview + uri,
                     addBirdDialogState = currentState.addBirdDialogState.copy(
@@ -99,38 +100,42 @@ class HomeViewModel : ViewModel() {
                 )
             } else currentState
         }
+        // Inicializar en el mapa con null (pendiente de carga).
+        _uploadedImgBbUrlMap[uri] = null
+
         viewModelScope.launch {
             try {
                 // Upload the image to ImgBB
                 val imageUrl = uploadImageToImgBB(context, uri, maxSizeKb = 1024)
                 if (imageUrl != null) {
-                    _uploadedImgBbUrlsSet.add(imageUrl)
+                    // Si se sube con éxito, asociar la URL al URI en el mapa.
+                    _uploadedImgBbUrlMap[uri] = imageUrl
                 } else {
+                    // En caso de error (URL null), mantener null y mostrar mensaje de error.
                     Log.e("HomeViewModel", "ImgBB upload returned null for $uri")
                     homeScreenStateMutableStateFlow.update { currentState ->
                         currentState.copy(
-                            addBirdDialogState = currentState.addBirdDialogState.copy(errorMessage = "Error al subir la imagen a ImgBB.")
+                            addBirdDialogState = currentState.addBirdDialogState.copy(
+                                errorMessage = "Error al subir la imagen a ImgBB."
+                            )
                         )
                     }
-                    homeScreenStateMutableStateFlow.update { currentState ->
-                        currentState.copy(
-                            selectedImageUrisForPreview = currentState.selectedImageUrisForPreview - uri
-                        )
-                    }
+                    // Opcional: podríamos eliminar la imagen fallida de la lista de preview,
+                    // pero preferimos dejarla y manejar el error en saveBird para permitir reintento.
                 }
             } catch (e: Exception) {
+                // Capturar excepciones durante la carga y actualizar estado de error.
                 Log.e("HomeViewModel", "Exception while uploading image to ImgBB: $uri", e)
                 homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
-                        addBirdDialogState = currentState.addBirdDialogState.copy(errorMessage = "Error al subir la imagen a ImgBB.")
+                        addBirdDialogState = currentState.addBirdDialogState.copy(
+                            errorMessage = "Error al subir la imagen a ImgBB."
+                        )
                     )
                 }
-                homeScreenStateMutableStateFlow.update { currentState ->
-                    currentState.copy(
-                        selectedImageUrisForPreview = currentState.selectedImageUrisForPreview - uri
-                    )
-                }
+                // Nota: en este caso _uploadedImgBbUrlMap[uri] sigue siendo null.
             } finally {
+                // Finalizar indicador de carga de imagen.
                 homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(isUploadingImage = false)
@@ -140,10 +145,13 @@ class HomeViewModel : ViewModel() {
         }
     }
 
+    // Llamado cuando se elimina una imagen de la selección.
     fun onImageRemoved(uri: Uri) {
         homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(selectedImageUrisForPreview = currentState.selectedImageUrisForPreview - uri)
         }
+        // Eliminar la entrada del mapa si estaba presente.
+        _uploadedImgBbUrlMap.remove(uri)
     }
 
     // Checks in Firestore if a bird with the given name exists for the current user.
@@ -182,6 +190,7 @@ class HomeViewModel : ViewModel() {
             }
             return
         }
+        // Indicar que comienza el guardado
         homeScreenStateMutableStateFlow.update { currentState ->
             currentState.copy(
                 addBirdDialogState = currentState.addBirdDialogState.copy(
@@ -190,6 +199,7 @@ class HomeViewModel : ViewModel() {
             )
         }
         viewModelScope.launch {
+            // Verificar existencia del nombre
             if (checkIfBirdNameExists(currentUserId, birdNameTrimmed)) {
                 homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
@@ -201,6 +211,7 @@ class HomeViewModel : ViewModel() {
                 }
                 return@launch
             }
+            // Verificar si aún se está subiendo alguna imagen
             if (homeScreenStateMutableStateFlow.value.addBirdDialogState.isUploadingImage) {
                 homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
@@ -212,8 +223,9 @@ class HomeViewModel : ViewModel() {
                 }
                 return@launch
             }
-            val finalImageUrlsToSave = _uploadedImgBbUrlsSet.toList()
-            if (homeScreenStateMutableStateFlow.value.selectedImageUrisForPreview.isNotEmpty() && finalImageUrlsToSave.isEmpty()) {
+            // Verificar que todas las imágenes seleccionadas se hayan subido correctamente.
+            // Si alguna URL es null, significa que falló la subida.
+            if (_uploadedImgBbUrlMap.values.any { it == null }) {
                 homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(
@@ -224,7 +236,10 @@ class HomeViewModel : ViewModel() {
                 }
                 return@launch
             }
+            // Preparar lista final de URLs para guardar (filtrar nulls si hay).
+            val finalImageUrlsToSave = _uploadedImgBbUrlMap.values.filterNotNull().toList()
 
+            // Crear nuevo BirdData con los datos recopilados
             val newBirdId = db.collection("birds").document().id
             val birdDataToSave = BirdData(
                 id = newBirdId,
@@ -237,6 +252,7 @@ class HomeViewModel : ViewModel() {
             )
 
             try {
+                // Guardar datos en Firestore (en IO)
                 withContext(Dispatchers.IO) {
                     db.collection("birds").document(newBirdId).set(birdDataToSave).await()
                 }
@@ -252,6 +268,7 @@ class HomeViewModel : ViewModel() {
                     )
                 }
             } finally {
+                // Asegurarse de resetear el estado de carga
                 homeScreenStateMutableStateFlow.update { currentState ->
                     currentState.copy(
                         addBirdDialogState = currentState.addBirdDialogState.copy(isUploading = false)

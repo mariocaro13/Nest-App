@@ -51,7 +51,7 @@ suspend fun uploadImageToImgBB(
             val imageBytes = context.contentResolver.openInputStream(imageUri)?.use { inputStream ->
                 val originalBitmap = BitmapFactory.decodeStream(inputStream)
                 var quality = 90
-                var stream = ByteArrayOutputStream()
+                val stream = ByteArrayOutputStream()
                 originalBitmap.compress(Bitmap.CompressFormat.JPEG, quality, stream)
 
                 while (stream.size() / 1024 > maxSizeKb && quality > 10) {
@@ -84,7 +84,6 @@ suspend fun uploadImageToImgBB(
                 ))
             }.body()
             Log.d("ImgBBUploadKtor", "Respuesta de ImgBB: $response")
-            client.close()
 
             if (response.success && response.data != null) {
                 return@withContext response.data.url
@@ -95,9 +94,16 @@ suspend fun uploadImageToImgBB(
                 return@withContext null
             }
 
-        } catch (_: IOException) {
+        } catch (e: IOException) {
+            Log.e("ImgBBUploadKtor", "IOException: ${e.message}", e)
             client.close()
             return@withContext null
+        } catch (e: Exception) {
+            Log.e("ImgBBUploadKtor", "ERROR inesperado: ${e.message}", e)
+            client.close()
+            return@withContext null
+        } finally {
+            client.close()
         }
     }
 }

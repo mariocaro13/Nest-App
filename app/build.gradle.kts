@@ -35,7 +35,7 @@ plugins {
 // ============================================================
 android {
     namespace = "com.example.carolsnest"
-    compileSdk = 35
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.carolsnest"
@@ -46,7 +46,7 @@ android {
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
         // Inject ImgBB API key into BuildConfig at compile time
-        buildConfigField("String", "IMGBB_API_KEY", "\"${imgBbApiKey}\"")
+        buildConfigField("String", "IMGBB_API_KEY", "\"$imgBbApiKey\"")
     }
 
     // ============================================================

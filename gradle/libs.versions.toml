@@ -13,7 +13,7 @@ agp = "8.11.0"                      # Android Gradle Plugin
 kotlin = "2.0.21"                   # Kotlin version
 composeBom = "2025.06.01"           # Compose BOM version
 kotlin-serialization = "1.9.0"      # Kotlin Serialization plugin
-googleServices = "4.4.2"            # Google Services plugin
+googleServices = "4.4.3"            # Google Services plugin
 
 # Library Versions (non-plugin)
 coilCompose = "2.5.0"               # Coil image loading
